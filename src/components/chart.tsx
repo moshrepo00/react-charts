@@ -1,16 +1,34 @@
 // @ts-ignore
 import {LineChart, Line, CartesianGrid, XAxis, Tooltip, Legend, YAxis} from 'recharts';
 import React, {useEffect, useState} from "react";
+import {io} from "socket.io-client";
+const ENDPOINT = "http://127.0.0.1:8080";
 
 
 let orangeClicks = 0;
 let blueClicks = 0;
+let time = 0;
+
+const socket = io(ENDPOINT);
+socket.open();
+socket.on("FromAPI", () => {
+    orangeClicks+=1;
+    socket.close();
+});
+
+setInterval(() => {
+    time += 1;
+    console.log('timer: ', time)
+}, 1000);
+
+
+
 export default function Chart(props: any) {
     const [seconds, setSeconds] = useState(0);
-
+    const [socketResponse, setSocketResponse] = useState("");
     const [chartData, setChartData] = useState([
         {
-            name: seconds,
+            name: time,
             blue: blueClicks,
             orange: orangeClicks
         }
@@ -18,13 +36,14 @@ export default function Chart(props: any) {
 
 
     useEffect(() => {
-        console.log('debugging seconds: ', seconds);
-        const timer = setInterval(() => {
-            setSeconds(seconds + 1);
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [seconds]);
-
+        const socket = io(ENDPOINT);
+        socket.open();
+        socket.on("FromAPI", () => {
+            updateClicks('orange')
+            setSocketResponse('');
+            socket.close();
+        });
+    }, [socketResponse])
 
     const updateClicks = (color: string) => {
         if (color === 'orange') {
@@ -32,10 +51,12 @@ export default function Chart(props: any) {
         } else if (color === 'blue') {
             blueClicks += 1;
         }
+
+        console.log("debugging chart data", chartData);
         const data = [...chartData];
         data.push(
             {
-                name: seconds,
+                name: time,
                 blue: orangeClicks,
                 orange: blueClicks
             });
