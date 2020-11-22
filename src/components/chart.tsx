@@ -11,16 +11,15 @@ let time = 0;
 
 const socket = io(ENDPOINT);
 socket.open();
-socket.on("FromAPI", () => {
+socket.on("orangeChecked", () => {
+    console.log('orange updated');
     orangeClicks+=1;
-    socket.close();
 });
 
-setInterval(() => {
-    time += 1;
-    console.log('timer: ', time)
-}, 1000);
-
+socket.on("blueChecked", () => {
+    console.log('blue updated');
+    blueClicks += 1;
+});
 
 
 export default function Chart(props: any) {
@@ -28,7 +27,7 @@ export default function Chart(props: any) {
     const [socketResponse, setSocketResponse] = useState("");
     const [chartData, setChartData] = useState([
         {
-            name: time,
+            name: seconds,
             blue: blueClicks,
             orange: orangeClicks
         }
@@ -36,14 +35,20 @@ export default function Chart(props: any) {
 
 
     useEffect(() => {
-        const socket = io(ENDPOINT);
-        socket.open();
-        socket.on("FromAPI", () => {
-            updateClicks('orange')
-            setSocketResponse('');
-            socket.close();
-        });
-    }, [socketResponse])
+        console.log('debugging seconds: ', seconds);
+        const timer = setInterval(() => {
+            setSeconds(seconds + 1);
+        }, 1000);
+        const data = [...chartData];
+        data.push(
+            {
+                name: seconds,
+                blue: orangeClicks,
+                orange: blueClicks
+            });
+        setChartData(data);
+        return () => clearInterval(timer);
+    }, [seconds]);
 
     const updateClicks = (color: string) => {
         if (color === 'orange') {
@@ -56,13 +61,32 @@ export default function Chart(props: any) {
         const data = [...chartData];
         data.push(
             {
-                name: time,
+                name: seconds,
                 blue: orangeClicks,
                 orange: blueClicks
             });
         setChartData(data);
     };
 
+    
+
+
+    const post = (color: string) => {
+
+        let body = JSON.stringify({ query: `{ ${color} }` })
+
+        fetch(ENDPOINT + '/graphql', {
+            method: 'post',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: body
+            })
+        .then(response => response.json())
+        .then(data => {
+        console.log('loaded data', JSON.stringify(data));
+        });
+    }
 
     return (
         <section>
@@ -85,8 +109,8 @@ export default function Chart(props: any) {
 
             <div>
                 <div>
-                    <button onClick={() => updateClicks('orange')}>Orange</button>
-                    <button onClick={() => updateClicks('blue')}>Blue</button>
+                    <button onClick={() => post('orange')}>Orange</button>
+                    <button onClick={() => post('blue')}>Blue</button>
                 </div>
             </div>
         </section>
