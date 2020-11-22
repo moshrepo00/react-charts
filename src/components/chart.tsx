@@ -2,7 +2,8 @@
 import {LineChart, Line, CartesianGrid, XAxis, Tooltip, Legend, YAxis} from 'recharts';
 import React, {useEffect, useState} from "react";
 import {io} from "socket.io-client";
-const ENDPOINT = "http://127.0.0.1:8080";
+// const ENDPOINT = "http://127.0.0.1:8080";
+const ENDPOINT = "https://charts-backend-mo.herokuapp.com";
 
 
 let orangeClicks = 0;
